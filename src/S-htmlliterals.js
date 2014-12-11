@@ -7,18 +7,42 @@
 })(function (S, htmlliterals) {
 
     htmlliterals.Shell.prototype.directive = function directive(name, values) {
-        var fn = directives[name];
+        var node = this.node,
+            fn = htmlliterals.directives[name];
 
         if (typeof fn !== 'function')
             throw new Error("No directive registered with name: " + name);
 
-        S(function () { values(fn(this.node)); });
+        fn = fn(node);
+
+        //var logFn = function() {
+        //    var args = Array.prototype.slice.call(arguments);
+        //    console.log("[@" + name + "(" + args.join(", ") + ")]");
+        //    fn.apply(undefined, args);
+        //};
+
+        S(function updateDirective() {
+            //values(logFn);
+            values(fn);
+        });
 
         return this;
     };
 
     htmlliterals.Shell.prototype.property = function property(setter) {
-        S(function () { setter(this.node); });
+        var node = this.node;
+
+        //var logSetter = function (node) {
+        //    var msg = setter.toString().substr(18); // remove "function () { __."
+        //    msg = msg.substr(0, msg.length - 3); // remove "; }"
+        //    console.log("[@" + node.nodeName + msg + "]");
+        //    setter(node);
+        //};
+
+        S(function updateProperty() {
+            //logSetter(node);
+            setter(node);
+        });
 
         return this;
     };
@@ -42,7 +66,7 @@
                 + "such as <input/>, <textarea/> or <select/>.  Element ``" + node + "'' is \n"
                 + "not a recognized control.  Perhaps you applied it to the wrong node?");
 
-        return handler;
+        return handler();
 
         function valueSignal() {
             var event = null;
@@ -51,19 +75,19 @@
                 if (arguments.length < 2) _signal = _event, _event = 'change';
                 setSignal(_signal);
 
-                K(function () {
+                S(function updateValue() {
                     node.value = signal();
                 });
 
                 if (_event !== event) {
-                    if (event) lib.removeEventListener(node, event, valueListener);
-                    lib.addEventListener(node, _event, valueListener);
+                    if (event) htmlliterals.domlib.removeEventListener(node, event, valueListener);
+                    htmlliterals.domlib.addEventListener(node, _event, valueListener);
                     event = _event;
                 }
             };
 
             function valueListener() {
-                var cur = K.peek(signal),
+                var cur = S.peek(signal),
                     update = node.value;
                 if (cur.toString() !== update) signal(update);
                 return true;
@@ -74,7 +98,7 @@
             var on = true,
                 off = false;
 
-            lib.addEventListener(node, "change", function checkboxListener() {
+            htmlliterals.domlib.addEventListener(node, "change", function checkboxListener() {
                 signal(node.checked ? on : off);
                 return true;
             });
@@ -85,16 +109,16 @@
                 on = _on === undefined ? true : _on;
                 off = _off === undefined ? (on === true ? false : null) : _off;
 
-                K(function () {
+                S(function updateCheckbox() {
                     node.checked = (signal() === on);
                 });
             };
         }
 
-        function radioSignal(values) {
+        function radioSignal() {
             var on = true;
 
-            lib.addEventListener(node, "change", function radioListener() {
+            htmlliterals.domlib.addEventListener(node, "change", function radioListener() {
                 if (node.checked) signal(on);
                 return true;
             });
@@ -104,7 +128,7 @@
 
                 on = _on === undefined ? true : _on;
 
-                K(function () {
+                S(function updateRadio() {
                     node.checked = (signal() === on);
                 });
             };

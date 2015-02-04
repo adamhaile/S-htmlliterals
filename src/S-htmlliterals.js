@@ -6,13 +6,7 @@
     else package(S, htmlliterals); // globals
 })(function (S, htmlliterals) {
 
-    htmlliterals.Shell.prototype.directive = function directive(name, values) {
-        var node = this.node,
-            fn = htmlliterals.directives[name];
-
-        if (typeof fn !== 'function')
-            throw new Error("No directive registered with name: " + name);
-
+    htmlliterals.Shell.execDirective = function directive(fn, node, values) {
         fn = fn(node);
 
         //var logFn = function() {
@@ -25,8 +19,6 @@
             //values(logFn);
             values(fn);
         });
-
-        return this;
     };
 
     htmlliterals.Shell.prototype.property = function property(setter) {
@@ -47,18 +39,18 @@
         return this;
     };
 
-    htmlliterals.directives.signal = function (node) {
+    htmlliterals.Shell.addDirective('data', function (node) {
         var signal = null,
             tag = node.nodeName,
             type = node.type && node.type.toUpperCase(),
             handler =
                 tag === 'INPUT'         ? (
-                    type === 'TEXT'     ? valueSignal    :
-                    type === 'RADIO'    ? radioSignal    :
-                    type === 'CHECKBOX' ? checkboxSignal :
+                    type === 'TEXT'     ? valueData    :
+                    type === 'RADIO'    ? radioData    :
+                    type === 'CHECKBOX' ? checkboxData :
                     null) :
-                tag === 'TEXTAREA'      ? valueSignal    :
-                tag === 'SELECT'        ? valueSignal    :
+                tag === 'TEXTAREA'      ? valueData    :
+                tag === 'SELECT'        ? valueData    :
                 null;
 
         if (!handler)
@@ -68,10 +60,10 @@
 
         return handler();
 
-        function valueSignal() {
+        function valueData() {
             var event = null;
 
-            return function valueSignal(_event, _signal) {
+            return function valueData(_event, _signal) {
                 if (arguments.length < 2) _signal = _event, _event = 'change';
                 setSignal(_signal);
 
@@ -94,7 +86,7 @@
             }
         }
 
-        function checkboxSignal() {
+        function checkboxData() {
             var on = true,
                 off = false;
 
@@ -103,7 +95,7 @@
                 return true;
             });
 
-            return function checkboxSignal(_signal, _on, _off) {
+            return function checkboxData(_signal, _on, _off) {
                 setSignal(_signal);
 
                 on = _on === undefined ? true : _on;
@@ -115,7 +107,7 @@
             };
         }
 
-        function radioSignal() {
+        function radioData() {
             var on = true;
 
             htmlliterals.domlib.addEventListener(node, "change", function radioListener() {
@@ -123,7 +115,7 @@
                 return true;
             });
 
-            return function radioSignal(_signal, _on) {
+            return function radioData(_signal, _on) {
                 setSignal(_signal);
 
                 on = _on === undefined ? true : _on;
@@ -140,6 +132,6 @@
                     + "Perhaps you mistakenly dereferenced it with '()'?");
             signal = s;
         }
-    };
+    });
 
 });

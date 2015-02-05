@@ -6,7 +6,7 @@
     else package(S, htmlliterals); // globals
 })(function (S, htmlliterals) {
 
-    htmlliterals.Shell.execDirective = function directive(fn, node, values) {
+    htmlliterals.Shell.runDirective = function runDirective(fn, node, values) {
         fn = fn(node);
 
         //var logFn = function() {
@@ -19,6 +19,10 @@
             //values(logFn);
             values(fn);
         });
+    };
+
+    htmlliterals.Shell.cleanup = function cleanup(node, fn) {
+        S.cleanup(fn);
     };
 
     htmlliterals.Shell.prototype.property = function property(setter) {
@@ -61,77 +65,60 @@
         return handler();
 
         function valueData() {
-            var event = null;
-
-            return function valueData(_event, _signal) {
-                if (arguments.length < 2) _signal = _event, _event = 'change';
-                setSignal(_signal);
+            return function valueData(event, signal) {
+                if (arguments.length < 2) signal = event, event = 'change';
 
                 S(function updateValue() {
                     node.value = signal();
                 });
 
-                if (_event !== event) {
-                    if (event) htmlliterals.domlib.removeEventListener(node, event, valueListener);
-                    htmlliterals.domlib.addEventListener(node, _event, valueListener);
-                    event = _event;
+                htmlliterals.domlib.addEventListener(node, event, valueListener);
+                S.cleanup(function () { htmlliterals.domlib.removeEventListener(node, event, valueListener); });
+
+                function valueListener() {
+                    var cur = S.peek(signal),
+                        update = node.value;
+                    if (cur.toString() !== update) signal(update);
+                    return true;
                 }
             };
-
-            function valueListener() {
-                var cur = S.peek(signal),
-                    update = node.value;
-                if (cur.toString() !== update) signal(update);
-                return true;
-            }
         }
 
         function checkboxData() {
-            var on = true,
-                off = false;
-
-            htmlliterals.domlib.addEventListener(node, "change", function checkboxListener() {
-                signal(node.checked ? on : off);
-                return true;
-            });
-
-            return function checkboxData(_signal, _on, _off) {
-                setSignal(_signal);
-
-                on = _on === undefined ? true : _on;
-                off = _off === undefined ? (on === true ? false : null) : _off;
+            return function checkboxData(signal, on, off) {
+                on = on === undefined ? true : on;
+                off = off === undefined ? (on === true ? false : null) : off;
 
                 S(function updateCheckbox() {
                     node.checked = (signal() === on);
                 });
+
+                htmlliterals.domlib.addEventListener(node, "change", checkboxListener);
+                S.cleanup(function () { htmlliterals.domlib.removeEventListener(node, "change", checkboxListener); });
+
+                function checkboxListener() {
+                    signal(node.checked ? on : off);
+                    return true;
+                }
             };
         }
 
         function radioData() {
-            var on = true;
-
-            htmlliterals.domlib.addEventListener(node, "change", function radioListener() {
-                if (node.checked) signal(on);
-                return true;
-            });
-
-            return function radioData(_signal, _on) {
-                setSignal(_signal);
-
-                on = _on === undefined ? true : _on;
+            return function radioData(signal, on) {
+                on = on === undefined ? true : on;
 
                 S(function updateRadio() {
                     node.checked = (signal() === on);
                 });
+
+                htmlliterals.domlib.addEventListener(node, "change", radioListener);
+                S.cleanup(function () { htmlliterals.domlib.removeEventListener(node, "change", radioListener); });
+
+                function radioListener() {
+                    if (node.checked) signal(on);
+                    return true;
+                }
             };
         }
-
-        function setSignal(s) {
-            if (typeof s !== 'function')
-                throw new Error("@signal must receive a function for two-way binding.  \n"
-                    + "Perhaps you mistakenly dereferenced it with '()'?");
-            signal = s;
-        }
     });
-
 });

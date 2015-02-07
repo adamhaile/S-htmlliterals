@@ -3,10 +3,10 @@
         package(require('S'), require('htmlliterals-runtime')); // CommonJS
     else if (typeof define === 'function')
         define(['S', 'htmlliterals-runtime'], package); // AMD
-    else package(S, htmlliterals); // globals
-})(function (S, htmlliterals) {
+    else package(S, Html); // globals
+})(function (S, Html) {
 
-    htmlliterals.Shell.runDirective = function runDirective(fn, node, values) {
+    Html.runDirective = function runDirective(fn, node, values) {
         fn = fn(node);
 
         //var logFn = function() {
@@ -21,11 +21,11 @@
         });
     };
 
-    htmlliterals.Shell.cleanup = function cleanup(node, fn) {
+    Html.cleanup = function cleanup(node, fn) {
         S.cleanup(fn);
     };
 
-    htmlliterals.Shell.prototype.property = function property(setter) {
+    Html.prototype.property = function property(setter) {
         var node = this.node;
 
         //var logSetter = function (node) {
@@ -43,7 +43,7 @@
         return this;
     };
 
-    htmlliterals.Shell.addDirective('data', function (node) {
+    Html.addDirective('data', function (node) {
         var signal = null,
             tag = node.nodeName,
             type = node.type && node.type.toUpperCase(),
@@ -72,8 +72,8 @@
                     node.value = signal();
                 });
 
-                htmlliterals.domlib.addEventListener(node, event, valueListener);
-                S.cleanup(function () { htmlliterals.domlib.removeEventListener(node, event, valueListener); });
+                Html.domlib.addEventListener(node, event, valueListener);
+                S.cleanup(function () { Html.domlib.removeEventListener(node, event, valueListener); });
 
                 function valueListener() {
                     var cur = S.peek(signal),
@@ -93,8 +93,8 @@
                     node.checked = (signal() === on);
                 });
 
-                htmlliterals.domlib.addEventListener(node, "change", checkboxListener);
-                S.cleanup(function () { htmlliterals.domlib.removeEventListener(node, "change", checkboxListener); });
+                Html.domlib.addEventListener(node, "change", checkboxListener);
+                S.cleanup(function () { Html.domlib.removeEventListener(node, "change", checkboxListener); });
 
                 function checkboxListener() {
                     signal(node.checked ? on : off);
@@ -111,8 +111,8 @@
                     node.checked = (signal() === on);
                 });
 
-                htmlliterals.domlib.addEventListener(node, "change", radioListener);
-                S.cleanup(function () { htmlliterals.domlib.removeEventListener(node, "change", radioListener); });
+                Html.domlib.addEventListener(node, "change", radioListener);
+                S.cleanup(function () { Html.domlib.removeEventListener(node, "change", radioListener); });
 
                 function radioListener() {
                     if (node.checked) signal(on);

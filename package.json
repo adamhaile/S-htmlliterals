@@ -1,0 +1,19 @@
+{
+  "name": "S-htmlliterals",
+  "version": "0.0.1",
+  "description": "S bindings for the htmlliterals runtime",
+  "main": "src/S-htmlliterals.js",
+  "scripts": {
+    "test": "jasmine-node"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/curveship/S-htmlliterals"
+  },
+  "author": "Adam Haile",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/curveship/S-htmlliterals/issues"
+  },
+  "homepage": "https://github.com/curveship/S-htmlliterals"
+}

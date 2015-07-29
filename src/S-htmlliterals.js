@@ -5,6 +5,7 @@
         define(['S', 'htmlliterals-runtime'], package); // AMD
     else package(S, Html); // globals
 })(function (S, Html) {
+    "use strict";
 
     Html.runDirective = function runDirective(fn, node, values) {
         fn = fn(node);
@@ -44,23 +45,24 @@
     };
 
     Html.addDirective('data', function (node) {
-        var signal = null,
-            tag = node.nodeName,
+        var tag = node.nodeName,
             type = node.type && node.type.toUpperCase(),
             handler =
                 tag === 'INPUT'         ? (
-                    type === 'TEXT'     ? valueData    :
-                    type === 'RADIO'    ? radioData    :
-                    type === 'CHECKBOX' ? checkboxData :
+                    type === 'TEXT'                 ? valueData       :
+                    type === 'RADIO'                ? radioData       :
+                    type === 'CHECKBOX'             ? checkboxData    :
                     null) :
-                tag === 'TEXTAREA'      ? valueData    :
-                tag === 'SELECT'        ? valueData    :
+                tag === 'TEXTAREA'                  ? valueData       :
+                tag === 'SELECT'                    ? valueData       :
+                Html.domlib.isContentEditable(node) ? textContentData :
                 null;
 
         if (!handler)
-            throw new Error("@signal can only be applied to a form control element, \n"
-                + "such as <input/>, <textarea/> or <select/>.  Element ``" + node + "'' is \n"
-                + "not a recognized control.  Perhaps you applied it to the wrong node?");
+            throw new Error("@data can only be applied to a form control element, \n"
+                + "such as <input/>, <textarea/> or <select/>, or to an element with "
+                + "'contentEditable' set.  Element ``" + tag + "'' is \n"
+                + "not such an element.  Perhaps you applied it to the wrong node?");
 
         return handler();
 
@@ -116,6 +118,26 @@
 
                 function radioListener() {
                     if (node.checked) signal(on);
+                    return true;
+                }
+            };
+        }
+        
+        function textContentData() {
+            return function textContentData(event, signal) {
+                if (arguments.length < 2) signal = event, event = 'input';
+
+                S(function updateTextContent() {
+                    node.textContent = signal();
+                });
+
+                Html.domlib.addEventListener(node, event, textContentListener);
+                S.cleanup(function () { Html.domlib.removeEventListener(node, event, textContentListener); });
+
+                function textContentListener() {
+                    var cur = S.peek(signal),
+                        update = node.textContent;
+                    if (cur.toString() !== update) signal(update);
                     return true;
                 }
             };

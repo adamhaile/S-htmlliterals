@@ -7,8 +7,9 @@
 })(function (S, Html) {
     "use strict";
 
-    Html.runDirective = function runDirective(fn, node, values) {
-        fn = fn(node);
+    Html.prototype.mixin = function mixin(fn) {
+        var node = this.node,
+            state;
 
         //var logFn = function() {
         //    var args = Array.prototype.slice.call(arguments);
@@ -16,14 +17,12 @@
         //    fn.apply(undefined, args);
         //};
 
-        S(function updateDirective() {
+        S(function mixin() {
             //values(logFn);
-            values(fn);
+            state = fn()(node, state);
         });
-    };
-
-    Html.cleanup = function cleanup(node, fn) {
-        S.cleanup(fn);
+        
+        return this;
     };
 
     Html.prototype.property = function property(setter) {
@@ -36,7 +35,7 @@
         //    setter(node);
         //};
 
-        S(function updateProperty() {
+        S(function property() {
             //logSetter(node);
             setter(node);
         });
@@ -44,31 +43,35 @@
         return this;
     };
 
-    Html.addDirective('data', function (node) {
-        var tag = node.nodeName,
-            type = node.type && node.type.toUpperCase(),
-            handler =
-                tag === 'INPUT'         ? (
-                    type === 'TEXT'                 ? valueData       :
-                    type === 'RADIO'                ? radioData       :
-                    type === 'CHECKBOX'             ? checkboxData    :
-                    null) :
-                tag === 'TEXTAREA'                  ? valueData       :
-                tag === 'SELECT'                    ? valueData       :
-                Html.domlib.isContentEditable(node) ? textContentData :
-                null;
-
-        if (!handler)
-            throw new Error("@data can only be applied to a form control element, \n"
-                + "such as <input/>, <textarea/> or <select/>, or to an element with "
-                + "'contentEditable' set.  Element ``" + tag + "'' is \n"
-                + "not such an element.  Perhaps you applied it to the wrong node?");
-
-        return handler();
-
-        function valueData() {
-            return function valueData(event, signal) {
-                if (arguments.length < 2) signal = event, event = 'change';
+    Html.cleanup = function cleanup(node, fn) {
+        S.cleanup(fn);
+    };
+    
+    Html.data = function(signal, arg1, arg2) {
+        return function (node) {
+            var tag = node.nodeName,
+                type = node.type && node.type.toUpperCase(),
+                handler =
+                    tag === 'INPUT'         ? (
+                        type === 'TEXT'                 ? valueData       :
+                        type === 'RADIO'                ? radioData       :
+                        type === 'CHECKBOX'             ? checkboxData    :
+                        null) :
+                    tag === 'TEXTAREA'                  ? valueData       :
+                    tag === 'SELECT'                    ? valueData       :
+                    Html.domlib.isContentEditable(node) ? textContentData :
+                    null;
+    
+            if (!handler)
+                throw new Error("@data can only be applied to a form control element, \n"
+                    + "such as <input/>, <textarea/> or <select/>, or to an element with "
+                    + "'contentEditable' set.  Element ``" + tag + "'' is \n"
+                    + "not such an element.  Perhaps you applied it to the wrong node?");
+    
+            return handler();
+    
+            function valueData() {
+                var event = arg1 || 'change';
 
                 S(function updateValue() {
                     node.value = signal();
@@ -83,13 +86,11 @@
                     if (cur.toString() !== update) signal(update);
                     return true;
                 }
-            };
-        }
-
-        function checkboxData() {
-            return function checkboxData(signal, on, off) {
-                on = on === undefined ? true : on;
-                off = off === undefined ? (on === true ? false : null) : off;
+            }
+    
+            function checkboxData() {
+                var on = arg1 === undefined ? true : arg1,
+                    off = arg2 === undefined ? (on === true ? false : null) : arg2;
 
                 S(function updateCheckbox() {
                     node.checked = (signal() === on);
@@ -102,12 +103,10 @@
                     signal(node.checked ? on : off);
                     return true;
                 }
-            };
-        }
-
-        function radioData() {
-            return function radioData(signal, on) {
-                on = on === undefined ? true : on;
+            }
+    
+            function radioData() {
+                var on = arg1 === undefined ? true : arg1;
 
                 S(function updateRadio() {
                     node.checked = (signal() === on);
@@ -120,12 +119,10 @@
                     if (node.checked) signal(on);
                     return true;
                 }
-            };
-        }
-        
-        function textContentData() {
-            return function textContentData(event, signal) {
-                if (arguments.length < 2) signal = event, event = 'input';
+            }
+            
+            function textContentData() {
+                var event = arg1 || 'input';
 
                 S(function updateTextContent() {
                     node.textContent = signal();
@@ -140,7 +137,7 @@
                     if (cur.toString() !== update) signal(update);
                     return true;
                 }
-            };
-        }
-    });
+            }
+        };
+    };
 });

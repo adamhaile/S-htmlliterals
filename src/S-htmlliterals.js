@@ -81,7 +81,7 @@
                 S.cleanup(function () { Html.domlib.removeEventListener(node, event, valueListener); });
 
                 function valueListener() {
-                    var cur = S.peek(signal),
+                    var cur = S.sample(signal),
                         update = node.value;
                     if (cur.toString() !== update) signal(update);
                     return true;
@@ -132,7 +132,7 @@
                 S.cleanup(function () { Html.domlib.removeEventListener(node, event, textContentListener); });
 
                 function textContentListener() {
-                    var cur = S.peek(signal),
+                    var cur = S.sample(signal),
                         update = node.textContent;
                     if (cur.toString() !== update) signal(update);
                     return true;

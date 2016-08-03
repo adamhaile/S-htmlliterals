@@ -140,4 +140,22 @@
             }
         };
     };
+    
+    Html.animationFrame = function animationFrame(go) {
+        var scheduled = false;
+    
+        return tick;
+    
+        function tick() {
+            if (!scheduled) {
+                scheduled = true;
+                requestAnimationFrame(run);
+            }
+        }
+        
+        function run() {
+            scheduled = false;
+            go();
+        }
+    }
 });

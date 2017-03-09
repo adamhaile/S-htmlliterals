@@ -7,41 +7,7 @@
 })(function (S, Html) {
     "use strict";
 
-    Html.prototype.mixin = function mixin(fn) {
-        var node = this.node,
-            state;
-
-        //var logFn = function() {
-        //    var args = Array.prototype.slice.call(arguments);
-        //    console.log("[@" + name + "(" + args.join(", ") + ")]");
-        //    fn.apply(undefined, args);
-        //};
-
-        S(function mixin() {
-            //values(logFn);
-            state = fn()(node, state);
-        });
-        
-        return this;
-    };
-
-    Html.prototype.property = function property(setter) {
-        var node = this.node;
-
-        //var logSetter = function (node) {
-        //    var msg = setter.toString().substr(18); // remove "function () { __."
-        //    msg = msg.substr(0, msg.length - 3); // remove "; }"
-        //    console.log("[@" + node.nodeName + msg + "]");
-        //    setter(node);
-        //};
-
-        S(function property() {
-            //logSetter(node);
-            setter(node);
-        });
-
-        return this;
-    };
+    Html.exec = S;
 
     Html.cleanup = function cleanup(node, fn) {
         S.cleanup(fn);
@@ -142,11 +108,13 @@
     };
     
     Html.animationFrame = function animationFrame(go) {
-        var scheduled = false;
+        var scheduled = false,
+            args = null;
     
         return tick;
     
         function tick() {
+            args = Array.prototype.slice.apply(arguments);
             if (!scheduled) {
                 scheduled = true;
                 requestAnimationFrame(run);
@@ -155,7 +123,7 @@
         
         function run() {
             scheduled = false;
-            go();
+            go.apply(null, args);
         }
     }
 });
